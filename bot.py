@@ -51,10 +51,11 @@ async def on_message(message):
 
     user_text = message.content.lower().strip()
 
-    # Bắt câu từ bot Lunari và đáp trả ngay lập tức
+    # Bắt câu từ bot Lunari và gửi 2 tin nhắn liên tiếp
     target_phrases = ["helo cái lol", "ê cái lol"]
     if any(phrase in user_text for phrase in target_phrases):
-        await message.channel.send("Kệ thg bố m, tao là cha m, chan bỏ mẹ m bây h chứ ở đấy mà kêu")
+        await message.channel.send("Kệ thg bố m, tao là cha m")
+        await message.channel.send("Chan bỏ mẹ m bây h con phế Lunari")
         return
 
     # KHI CÓ NGƯỜI TAG @ CON BOT
