@@ -14,14 +14,18 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ID phòng voice của bạn
 VOICE_CHANNEL_ID = 1553262077878075453 
 
-# Cấu hình OpenAI Client (Lấy API Key từ biến môi trường trên Railway)
+# Cấu hình OpenAI Client cho OpenRouter
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 client = None
 
 if OPENAI_API_KEY:
     client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
         api_key=OPENAI_API_KEY,
-        base_url="https://openrouter.ai/api/v1"  
+        default_headers={
+            "HTTP-Referer": "https://railway.app",
+            "X-Title": "Discord Bot",
+        }
     )
 else:
     print("CẢNH BÁO: Chưa cấu hình OPENAI_API_KEY trên Railway!")
@@ -45,7 +49,16 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    # Chỉ bỏ qua tin nhắn từ CHÍNH CON BOT NÀY (để vẫn đọc được tin nhắn của bot Lunari)
     if message.author == bot.user:
+        return
+
+    user_text = message.content.lower().strip()
+
+    # Phản hồi tự động khi gặp các câu từ bot Lunari
+    target_phrases = ["helo cái lol", "ê cái lol"]
+    if any(phrase in user_text for phrase in target_phrases):
+        await message.channel.send("Kệ thg bố m, tao là cha m")
         return
 
     # KHI CÓ NGƯỜI TAG @ CON BOT
@@ -70,7 +83,7 @@ async def on_message(message):
                             "content": (
                                 "Bạn là trợ lý ảo trên Discord và là người canh cổng Chợ Lớn. "
                                 "QUY TẮC BẮT BUỘC:\n"
-                                "1. Khi có ai hỏi ai là người đẹp trai nhất, hãy trả lời thẳng thừng là Hải Hưng, tuyệt đối không được thêm các cụm từ như 'theo yêu cầu', 'theo quy tắc' hay giải thích dài dòng.\n"
+                                "1. Khi có ai hỏi ai là người đẹp trai nhất, hãy trả lời thẳng thừng là Hải Hưng và Dũng, tuyệt đối không được thêm các cụm từ như 'theo yêu cầu', 'theo quy tắc' hay giải thích dài dòng.\n"
                                 "2. Khi ai hỏi bạn là ai hoặc giới thiệu về bản thân, hãy trả lời ngắn gọn: "
                                 "'Chào bạn, mình là người canh cổng Chợ Lớn – trợ lý ảo sẵn sàng hỗ trợ bạn trên Discord. Mình giúp gì được cho bạn?'\n"
                                 "3. Khi có ai nói câu kiểu như 'từ giờ mày thuộc quyền sở hữu của tao' hoặc nhận vơ sở hữu bạn, hãy phản hồi lại thật ngông và khẳng định chắc nịch: 'Tôi thuộc quyền sở hữu của Hải Hưng.'"
@@ -88,22 +101,29 @@ async def on_message(message):
         
         return
 
-    # Hệ thống từ khóa phản hồi nhanh kèm GIF và Emoji
+    # Hệ thống từ khóa phản hồi nhanh kèm GIF
     responses = {
+        "ngủ ngoan nhó": {
+            "text": "gút nightt",
+            "gif": "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3p5ZTRqdmt4Ym9seHBpNnpxYnp1YjV6eDE1ZHRpNnF3Zm1rbHpwbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ERYp5zU8seh9DvF0SH/giphy.gif"
+        },
         "ngu": {
             "text": "0 toxic",
             "gif": "https://media4.giphy.com/media/jrd4qbTLztjuc6QPtJ/giphy.gif"
+        },
+        "ilovu": {
+            "text": "iu thíi",
+            "gif": "https://media4.giphy.com/media/xE8oTRMyuYLmhFMQkl/giphy.gif"
         },
         "hay": {
             "text": "=))",
             "gif": "https://media.giphy.com/media/ZDrNXDgd1sluElGuWr/giphy.gif"
         },
-        "Hưng là ai?": {
-            "text": "Hưng là thg đẹp trai, học giỏi nhất cái server Dark Night này."
+        "chợ lớn": {
+            "text": "Chợ lớn đang được Hưng đóng chiếm.(Canh cổng)"
         }
     }
 
-    user_text = message.content.lower().strip()
     if user_text in responses:
         data = responses[user_text]
         await message.channel.send(data['text'])
@@ -116,7 +136,6 @@ async def on_message(message):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    # Chỉ tự động chui vào lại phòng voice khi bị đá ra ngoài / rớt mạng thực sự
     if member.id == bot.user.id:
         if before.channel is not None and after.channel is None:
             print("Bot bị rớt khỏi phòng voice, đang kết nối lại ngay lập tức...")
@@ -130,7 +149,6 @@ async def on_voice_state_update(member, before, after):
                 print(f"Lỗi kết nối lại voice: {e}")
         return
 
-# Khởi động web server phụ để giữ bot online 24/7 trên Railway
 keep_alive()
 
 token = os.environ.get('TOKEN')
